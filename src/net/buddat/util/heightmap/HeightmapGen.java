@@ -14,10 +14,12 @@ public class HeightmapGen extends JFrame implements KeyListener {
 
 	public static final int MAP_SIZE = 1024;
 	
-	public static final double RESOLUTION = MAP_SIZE / 1.5;
+	public static final double RESOLUTION = MAP_SIZE / 2.0;
 	
 	public static final float MIN_SLOPE = 0.001f, MAX_SLOPE = 0.9f;
 	public static final float MAX_SEDIMENT = 0.01f, SEDIMENT_BASE = 0.15f;
+	
+	public static final float WATER_WEIGHT = 0.18f;
 	
 	public static final int EROSION_ITERATIONS = 50;
 	
@@ -43,13 +45,13 @@ public class HeightmapGen extends JFrame implements KeyListener {
 		increaseLand(++currentBaseIteration);
 		increaseLand(++currentBaseIteration);
 		increaseLand(++currentBaseIteration);
-		cleanupDregs();
+		//cleanupDregs();
 		increaseLand(++currentBaseIteration);
 		increaseLand(++currentBaseIteration);
-		cleanupDregs();
+		//cleanupDregs();
 		increaseLand(++currentBaseIteration);
 		increaseLand(++currentBaseIteration);
-		cleanupDregs();
+		//cleanupDregs();
 	}
 	
 	@Override
@@ -190,6 +192,23 @@ public class HeightmapGen extends JFrame implements KeyListener {
 			}
 			System.out.println();
 		}
+		
+		/*if (e.getKeyCode() == KeyEvent.VK_S) {
+			try {
+				MapData map = new MapData("./", 10);
+				for (int i = 0; i < MAP_SIZE; i++) {
+					for (int j = 0; j < MAP_SIZE; j++) {
+						map.setSurfaceHeight(i, j, (short) ((tileMap[i][j].getHeight() - WATER_WEIGHT) * 4096.0));
+						map.setRockHeight(i, j, (short) ((tileMap[i][j].getHeight() - WATER_WEIGHT) * 2048.0));
+					}
+				}
+
+				bI = map.createTopographicDump(true, (short) 100);
+				this.repaint();
+			} catch (IOException e1) {
+				e1.printStackTrace();
+			}
+		}*/
 	}
 
 	@Override
