@@ -71,7 +71,9 @@ public class HeightmapGen extends JFrame implements KeyListener {
 			}
 		}
 		
-		bI = new BufferedImage(MAP_SIZE, MAP_SIZE, BufferedImage.TYPE_BYTE_GRAY);
+		if (bI == null)
+			bI = new BufferedImage(MAP_SIZE, MAP_SIZE, BufferedImage.TYPE_BYTE_GRAY);
+		
 		updateMap();
 	}
 	
@@ -102,13 +104,7 @@ public class HeightmapGen extends JFrame implements KeyListener {
 			}
 		}
 		
-		this.repaint();
-		
-		try {
-			Thread.sleep(5);
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
+		this.paint(this.getGraphics());
 	}
 	
 	public void cleanupDregs() {
