@@ -1,18 +1,32 @@
 package net.buddat.util.heightmap;
 
-public class Tile {
+import com.wurmonline.mesh.Tiles.Tile;
+
+public class MapTile {
 
 	private int x, y;
 	private float height;
 	
-	public Tile (int x, int y) {
+	private Tile type;
+	
+	public MapTile (int x, int y) {
 		this(x, y, 0.0f);
 	}
 	
-	public Tile(int x, int y, float height) {
+	public MapTile(int x, int y, float height) {
 		setX(x);
 		setY(y);
 		setHeight(height);
+		
+		type = Tile.TILE_DIRT;
+	}
+	
+	public Tile getType() {
+		return type;
+	}
+	
+	public void setType(Tile newType) {
+		type = newType;
 	}
 	
 	public int getX() {
@@ -51,7 +65,7 @@ public class Tile {
 			return;
 		}
 		
-		float maxHeight = 1.0f - ((1.0f / (HeightmapGen.MAP_SIZE / 1.85f)) * getDist());
+		float maxHeight = 1.0f - ((1.0f / (HeightmapGen.MAP_SIZE / 1.75f)) * getDist());
 		if (newHeight > maxHeight)
 			newHeight = maxHeight;
 		if (newHeight < 0f)
