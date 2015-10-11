@@ -2,6 +2,7 @@ package net.buddat.util.heightmap;
 
 import java.awt.Color;
 import java.awt.Graphics;
+import java.awt.Point;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.image.BufferedImage;
@@ -20,27 +21,42 @@ public class HeightmapGen extends JFrame implements KeyListener {
 	
 	private static final long serialVersionUID = 1500559112995998883L;
 
-	public static final int MAP_SIZE = 1024;
+	public static final int MAP_SIZE = 2048;
 	public static final int WINDOW_SIZE = 1024;
 	
-	public static final double RESOLUTION = MAP_SIZE / 1.5;
+	public static final float MAP_HEIGHT = 4096f;
 	
-	public static final float MIN_SLOPE = 0.001f, MAX_SLOPE = 0.9f;
+	public static final float SINGLE_DIRT = 1.0f / MAP_HEIGHT;
+	
+	public static final double RESOLUTION = MAP_SIZE / 2;
+	
+	public static final float MIN_SLOPE = 0.0001f, MAX_SLOPE = 0.9f;
 	public static final float MAX_SEDIMENT = 0.01f, SEDIMENT_BASE = 0.15f;
 	
-	public static final float WATER_WEIGHT = 0.20f;
-	public static final float MAP_HEIGHT = 2048f;
+	public static final int DIRT_DROP_COUNT = 60;
+	public static final int MAX_DIRT_SLOPE = 40;
 	
-	public static final int EROSION_ITERATIONS = 50;
+	public static final int EROSION_ITERATIONS = 100;
+	
 	public static final int GRASS_ITERATIONS = 50;
+	public static final float BIOME_RATE = 0.75f;
+	public static final float BIOME_MAX_SLOPE = SINGLE_DIRT * 20;
 	
-	public static final float GRASS_RATE = 0.5f;
-	public static final float GRASS_MAX_SLOPE = 0.01f;
+	public static final float SAND_WEIGHT = 1.075f;
+	public static final float ROCK_WEIGHT = 0.95f;
+	public static final float ROCK_SLOPE_WEIGHT = 0.0005f;
 	
 	private MapTile[][] tileMap;
 	private BufferedImage bI;
 	
 	private int currentBaseIteration;
+	public static float waterWeight = 0.20f;
+	
+	public float dirtDrop = SINGLE_DIRT * DIRT_DROP_COUNT;
+	public float dirtSlope = SINGLE_DIRT * MAX_DIRT_SLOPE;
+	public float dirtDiagonalSlope = dirtSlope * 1.1f;
+	
+	public static final Random GEN_RAND = new Random(System.currentTimeMillis());
 	
 	private WurmAPI api;
 
@@ -53,13 +69,31 @@ public class HeightmapGen extends JFrame implements KeyListener {
 		
 		this.addKeyListener(this);
 		
-		newMap();
-		
         try {
             api = WurmAPI.create("./", (int) (Math.log(MAP_SIZE) / Math.log(2)));
         } catch (IOException ex) {
         	ex.printStackTrace();
         }
+		
+		fullRun();
+	}
+	
+	public void fullRun() {
+		newMap();
+		normalizeHeights();
+		waterWeight = tileMap[MAP_SIZE / 2][MAP_SIZE / 20].getMaxHeight();
+		
+		System.out.print("Erode Rock" + "(" + EROSION_ITERATIONS +") ");
+		for (int i = 0; i < EROSION_ITERATIONS; i++) {
+			System.out.print((i + 1) + ((i + 1) % 20 == 0 ? "\r\n" : " "));
+			erode(false);
+		}
+		
+		dropDirt();
+		
+		generateBiomes();
+		
+		showMapDump(false);
 	}
 	
 	public void newMap() {
@@ -112,7 +146,7 @@ public class HeightmapGen extends JFrame implements KeyListener {
 						j / (RESOLUTION / Math.pow(2, iteration))) 
 						/ (Math.pow(2, iteration) * 2.0));
 				
-				tileMap[i][j].setHeight(tileMap[i][j].getHeight() + inc);
+				tileMap[i][j].setHeight(tileMap[i][j].getHeight() + inc, false);
 			}
 		}
 		
@@ -136,14 +170,30 @@ public class HeightmapGen extends JFrame implements KeyListener {
 		for (int i = 0; i < MAP_SIZE; i++) {
 			for (int j = 0; j < MAP_SIZE; j++) {
 				if (tileMap[i][j].getHeight() < (MAX_SLOPE * 0.2f))
-					tileMap[i][j].setHeight(0f);
+					tileMap[i][j].setHeight(0f, false);
 			}
 		}
 		
 		updateMap();
 	}
 	
-	public void erode() {
+	public void normalizeHeights() {
+		float maxHeight = 0.0f;
+		for (int i = 0; i < MAP_SIZE; i++) {
+			for (int j = 0; j < MAP_SIZE; j++) {
+				if (tileMap[i][j].getHeight() > maxHeight)
+					maxHeight = tileMap[i][j].getHeight();
+			}
+		}
+		
+		float normalize = 1.0f / maxHeight;
+		System.out.println("Normalizing: " + normalize + " MaxEdgeHeight: " + 0.13 * normalize);
+		for (int i = 0; i < MAP_SIZE; i++)
+			for (int j = 0; j < MAP_SIZE; j++)
+				tileMap[i][j].setHeight(tileMap[i][j].getHeight() * normalize, true);
+	}
+	
+	public void erode(boolean erodeDirt) {
 		for (int i = 0; i < MAP_SIZE; i++) {
 			for (int j = 0; j < MAP_SIZE; j++) {
 				float neighbours[] = new float[4];
@@ -152,6 +202,14 @@ public class HeightmapGen extends JFrame implements KeyListener {
 				neighbours[1] = tileMap[i][clamp(j-1, 0, MAP_SIZE-1)].getHeight();
 				neighbours[2] = tileMap[clamp(i+1, 0, MAP_SIZE-1)][j].getHeight();
 				neighbours[3] = tileMap[i][clamp(j+1, 0, MAP_SIZE-1)].getHeight();
+				
+				if (erodeDirt) {
+					current += tileMap[i][j].getDirt();
+					neighbours[0] += tileMap[clamp(i-1, 0, MAP_SIZE-1)][j].getDirt();
+					neighbours[1] += tileMap[i][clamp(j-1, 0, MAP_SIZE-1)].getDirt();
+					neighbours[2] += tileMap[clamp(i+1, 0, MAP_SIZE-1)][j].getDirt();
+					neighbours[3] += tileMap[i][clamp(j+1, 0, MAP_SIZE-1)].getDirt();
+				}
 				
 				int lowest = 0;
 				float maxDiff = 0f;
@@ -164,68 +222,131 @@ public class HeightmapGen extends JFrame implements KeyListener {
 				}
 				
 				float sediment = 0f;
-				if (maxDiff > MIN_SLOPE && maxDiff <= MAX_SLOPE) {
-					sediment = Math.min(MIN_SLOPE, (SEDIMENT_BASE * maxDiff));
+				if (maxDiff > MIN_SLOPE/* && maxDiff <= MAX_SLOPE*/) {
+					sediment = SEDIMENT_BASE * maxDiff;
+					if (erodeDirt)
+						sediment = dirtDrop / 10f;
 					current -= sediment;
 					neighbours[lowest] += sediment;
 				}
 				
-				tileMap[i][j].setHeight(current);
-				tileMap[clamp(i-1, 0, MAP_SIZE-1)][j].setHeight(neighbours[0]);
-				tileMap[i][clamp(j-1, 0, MAP_SIZE-1)].setHeight(neighbours[1]);
-				tileMap[clamp(i+1, 0, MAP_SIZE-1)][j].setHeight(neighbours[2]);
-				tileMap[i][clamp(j+1, 0, MAP_SIZE-1)].setHeight(neighbours[3]);
+				if (erodeDirt) {
+					if (maxDiff > ROCK_SLOPE_WEIGHT)
+						tileMap[i][j].setDirt(0);
+					else
+						tileMap[i][j].setDirt(current - tileMap[i][j].getHeight());
+					
+					tileMap[clamp(i-1, 0, MAP_SIZE-1)][j].setDirt(neighbours[0] - tileMap[clamp(i-1, 0, MAP_SIZE-1)][j].getHeight());
+					tileMap[i][clamp(j-1, 0, MAP_SIZE-1)].setDirt(neighbours[1] - tileMap[i][clamp(j-1, 0, MAP_SIZE-1)].getHeight());
+					tileMap[clamp(i+1, 0, MAP_SIZE-1)][j].setDirt(neighbours[2] - tileMap[clamp(i+1, 0, MAP_SIZE-1)][j].getHeight());
+					tileMap[i][clamp(j+1, 0, MAP_SIZE-1)].setDirt(neighbours[3] - tileMap[i][clamp(j+1, 0, MAP_SIZE-1)].getHeight());
+				} else {
+					tileMap[i][j].setHeight(current, true);
+					tileMap[clamp(i-1, 0, MAP_SIZE-1)][j].setHeight(neighbours[0], true);
+					tileMap[i][clamp(j-1, 0, MAP_SIZE-1)].setHeight(neighbours[1], true);
+					tileMap[clamp(i+1, 0, MAP_SIZE-1)][j].setHeight(neighbours[2], true);
+					tileMap[i][clamp(j+1, 0, MAP_SIZE-1)].setHeight(neighbours[3], true);
+				}
 			}
 		}
 	}
 	
-	public void plantGrass(int grassSeeds, int growthIterations) {
+	public void dropDirt() {
+		System.out.print("Drop Dirt(" + DIRT_DROP_COUNT +") ");
+		for (int i = 0; i < DIRT_DROP_COUNT; i++) {
+			System.out.print((i + 1) + ((i + 1) % 20 == 0 ? "\r\n" : " "));
+			
+			for (int x = 0; x < MAP_SIZE; x++) {
+				for (int y = 0; y < MAP_SIZE; y++) {
+					Point dropTile = findDropTile(x, y);
+					
+					tileMap[(int) dropTile.getX()][(int) dropTile.getY()].addDirt(SINGLE_DIRT);
+				}
+			}
+		}
+	}
+	
+	
+	private Point findDropTile(int x, int y) {
+		ArrayList<Point> slopes = new ArrayList<Point>();
+		float currentHeight = tileMap[x][y].getHeight() + tileMap[x][y].getDirt();
+		
+		for (int i = x + 1; i > x - 1; i--) {
+			for (int j = y + 1; j > y - 1; j--) {
+				if (i < 0 || j < 0 || i >= MAP_SIZE || j >= MAP_SIZE)
+					continue;
+				
+				float thisHeight = tileMap[i][j].getHeight() + tileMap[i][j].getDirt();
+				if ((i == 0 && j != 0) || (i != 0 && j == 0))
+					if (thisHeight <= currentHeight - dirtSlope)
+						slopes.add(new Point(i, j));
+				
+				if (i != 0 && y != 0)
+					if (thisHeight <= currentHeight - dirtDiagonalSlope)
+						slopes.add(new Point(i, j));
+			}
+		}
+		
+		if (slopes.size() > 0) {
+			int r = GEN_RAND.nextInt(slopes.size());
+			return findDropTile((int) slopes.get(r).getX(), (int) slopes.get(r).getY());
+		} else {
+			return new Point(x, y);
+		}
+	}
+	
+	public void generateBiomes() {
+		plantBiome(MAP_SIZE / 64, 64, Tile.TILE_SAND);
+		plantBiome(MAP_SIZE / 64, 80, Tile.TILE_STEPPE);
+		plantBiome(MAP_SIZE / 128, 16, Tile.TILE_PEAT);
+		plantBiome(MAP_SIZE / 256, 64, Tile.TILE_TUNDRA);
+	}
+	
+	public void plantBiome(int seedCount, int growthIterations, Tile type) {
 		ArrayList<MapTile> grassList = new ArrayList<MapTile>();
 		ArrayList<MapTile> nextList = new ArrayList<MapTile>();
 		
-		Random gRand = new Random(System.currentTimeMillis());
-		for (int i = 0; i < grassSeeds; i++)
-			grassList.add(tileMap[gRand.nextInt(MAP_SIZE)][gRand.nextInt(MAP_SIZE)]);
+		for (int i = 0; i < seedCount; i++)
+			grassList.add(tileMap[GEN_RAND.nextInt(MAP_SIZE)][GEN_RAND.nextInt(MAP_SIZE)]);
 		
-		System.out.print("Grass(" + growthIterations + ") ");
+		System.out.print("Biome(" + growthIterations + ") ");
 		for (int i = 0; i < growthIterations; i++) {
-			System.out.print((i + 1) + (i + 1 % 20 == 0 ? "\r\n" : " "));
-			nextList = growGrass(grassList);
-			grassList = growGrass(nextList);
+			System.out.print((i + 1) + ((i + 1) % 16 == 0 ? "\r\n" : " "));
+			nextList = growGrass(grassList, type);
+			grassList = growGrass(nextList, type);
 		}
-		System.out.println();
 		
 		this.repaint();
 	}
 	
-	public ArrayList<MapTile> growGrass(ArrayList<MapTile> fromList) {
+	public ArrayList<MapTile> growGrass(ArrayList<MapTile> fromList, Tile type) {
 		ArrayList<MapTile> nextList = new ArrayList<MapTile>();
 		
 		for (MapTile t : fromList) {
-			if (t.getType() != Tile.TILE_GRASS)
-				t.setType(Tile.TILE_GRASS);
+			if (t.getTypeOverride() != type)
+				t.setTypeOverride(type);
 			
-			if (Math.random() < GRASS_RATE) { //North
+			if (Math.random() < BIOME_RATE) { //North
 				MapTile nT = tileMap[t.getX()][clamp(t.getY() - 1, 0, MAP_SIZE-1)];
-				if (setGrass(t, nT))
+				if (setGrass(t, nT, type))
 					nextList.add(nT);
 			}
 			
-			if (Math.random() < GRASS_RATE) { //South
+			if (Math.random() < BIOME_RATE) { //South
 				MapTile nT = tileMap[t.getX()][clamp(t.getY() + 1, 0, MAP_SIZE-1)];
-				if (setGrass(t, nT))
+				if (setGrass(t, nT, type))
 					nextList.add(nT);
 			}
 			
-			if (Math.random() < GRASS_RATE) { //East
+			if (Math.random() < BIOME_RATE) { //East
 				MapTile nT = tileMap[clamp(t.getX() + 1, 0, MAP_SIZE-1)][t.getY()];
-				if (setGrass(t, nT))
+				if (setGrass(t, nT, type))
 					nextList.add(nT);
 			}
 			
-			if (Math.random() < GRASS_RATE) { //West
+			if (Math.random() < BIOME_RATE) { //West
 				MapTile nT = tileMap[clamp(t.getX() - 1, 0, MAP_SIZE-1)][t.getY()];
-				if (setGrass(t, nT))
+				if (setGrass(t, nT, type))
 					nextList.add(nT);
 			}
 		}
@@ -233,19 +354,41 @@ public class HeightmapGen extends JFrame implements KeyListener {
 		return nextList;
 	}
 	
-	private boolean setGrass(MapTile from, MapTile to) {
-		if (Math.abs(from.getHeight() - to.getHeight()) > GRASS_MAX_SLOPE)
+	private boolean setGrass(MapTile from, MapTile to, Tile type) {
+		if (Math.abs(from.getHeight() - to.getHeight()) > BIOME_MAX_SLOPE)
 			return false;
 		
-		if (to.getHeight() < WATER_WEIGHT)
+		if (to.getHeight() < waterWeight)
 			return false;
 		
-		if (to.getType() != Tile.TILE_GRASS) {
-			to.setType(Tile.TILE_GRASS);
+		if (to.getTypeOverride() != type) {
+			to.setTypeOverride(type);
 			return true;
 		}
 		
 		return false;
+	}
+	
+	public void showMapDump(boolean topographic) {
+		MapData map = api.getMapData();
+		
+		for (int i = 0; i < MAP_SIZE; i++) {
+			for (int j = 0; j < MAP_SIZE; j++) {
+				tileMap[i][j].resetTypes();
+				
+				map.setSurfaceHeight(i, j, (short) ((tileMap[i][j].getHeight() - waterWeight) * MAP_HEIGHT));
+				map.setRockHeight(i, j, (short) ((tileMap[i][j].getHeight() - tileMap[i][j].getDirt() - waterWeight) * MAP_HEIGHT));
+				
+				map.setSurfaceTile(i, j, tileMap[i][j].getType());
+			}
+		}
+		
+		if (topographic)
+			bI = map.createTopographicDump(true, (short) 100);
+		else
+			bI = map.createMapDump();
+		
+		this.repaint();
 	}
 	
 	public static int clamp(int val, int min, int max) {
@@ -264,6 +407,9 @@ public class HeightmapGen extends JFrame implements KeyListener {
 
 	@Override
 	public void keyPressed(KeyEvent e) {
+		if (e.getKeyCode() == KeyEvent.VK_ESCAPE)
+			fullRun();
+		
 		if (e.getKeyCode() == KeyEvent.VK_ENTER)
 			generate();
 		if (e.getKeyCode() == KeyEvent.VK_CONTROL)
@@ -271,36 +417,28 @@ public class HeightmapGen extends JFrame implements KeyListener {
 		if (e.getKeyCode() == KeyEvent.VK_C)
 			cleanupDregs();
 		
+		if (e.getKeyCode() == KeyEvent.VK_D)
+			dropDirt();
+		
+		if (e.getKeyCode() == KeyEvent.VK_N)
+			normalizeHeights();
+		
 		if (e.getKeyCode() == KeyEvent.VK_SPACE)
 			newMap();
 		
-		if (e.getKeyCode() == KeyEvent.VK_E) {
-			System.out.print("Erode(" + EROSION_ITERATIONS +") ");
+		if (e.getKeyCode() == KeyEvent.VK_E || e.getKeyCode() == KeyEvent.VK_R) {
+			System.out.print("Erode " + (e.getKeyCode() == KeyEvent.VK_R ? "Dirt" : "Rock") + "(" + EROSION_ITERATIONS +") ");
 			for (int i = 0; i < EROSION_ITERATIONS; i++) {
 				System.out.print((i + 1) + ((i + 1) % 20 == 0 ? "\r\n" : " "));
-				erode();
+				erode(e.getKeyCode() == KeyEvent.VK_R);
 			}
-			System.out.println();
 		}
 		
-		if (e.getKeyCode() == KeyEvent.VK_S) {
-			MapData map = api.getMapData();
-			
-			for (int i = 0; i < MAP_SIZE; i++) {
-				for (int j = 0; j < MAP_SIZE; j++) {
-					map.setSurfaceHeight(i, j, (short) ((tileMap[i][j].getHeight() - WATER_WEIGHT) * MAP_HEIGHT));
-					map.setRockHeight(i, j, (short) ((tileMap[i][j].getHeight() - WATER_WEIGHT) * MAP_HEIGHT / 2.0));
-					
-					map.setSurfaceTile(i, j, tileMap[i][j].getType());
-				}
-			}
-			//bI = map.createTopographicDump(true, (short) 100);
-			bI = map.createMapDump();
-			this.repaint();
-		}
+		if (e.getKeyCode() == KeyEvent.VK_S)
+			showMapDump(false);
 		
 		if (e.getKeyCode() == KeyEvent.VK_G)
-			plantGrass(MAP_SIZE / 2, GRASS_ITERATIONS);
+			plantBiome(MAP_SIZE / 2, GRASS_ITERATIONS, Tile.TILE_GRASS);
 	}
 
 	@Override
