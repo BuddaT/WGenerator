@@ -21,14 +21,14 @@ public class HeightmapGen extends JFrame implements KeyListener {
 	
 	private static final long serialVersionUID = 1500559112995998883L;
 
-	public static final int MAP_SIZE = 2048;
+	public static final int MAP_SIZE = 4096;
 	public static final int WINDOW_SIZE = 1024;
 	
-	public static final float MAP_HEIGHT = 4096f;
+	public static final float MAP_HEIGHT = 8192f;
 	
 	public static final float SINGLE_DIRT = 1.0f / MAP_HEIGHT;
 	
-	public static final double RESOLUTION = MAP_SIZE / 2;
+	public static final double RESOLUTION = MAP_SIZE / 4;
 	
 	public static final float MIN_SLOPE = 0.0001f, MAX_SLOPE = 0.9f;
 	public static final float MAX_SEDIMENT = 0.01f, SEDIMENT_BASE = 0.15f;
@@ -39,12 +39,16 @@ public class HeightmapGen extends JFrame implements KeyListener {
 	public static final int EROSION_ITERATIONS = 100;
 	
 	public static final int GRASS_ITERATIONS = 50;
-	public static final float BIOME_RATE = 0.75f;
+	public static final float BIOME_RATE = 0.6f;
 	public static final float BIOME_MAX_SLOPE = SINGLE_DIRT * 20;
 	
+	public static final float WATER_WEIGHT = 0.125f;
 	public static final float SAND_WEIGHT = 1.075f;
 	public static final float ROCK_WEIGHT = 0.95f;
 	public static final float ROCK_SLOPE_WEIGHT = 0.0005f;
+	
+	public static final float NORMAL_LOW = 0.5f;
+	public static final float NORMAL_HIGH = 1.0f - NORMAL_LOW;
 	
 	private MapTile[][] tileMap;
 	private BufferedImage bI;
@@ -81,7 +85,7 @@ public class HeightmapGen extends JFrame implements KeyListener {
 	public void fullRun() {
 		newMap();
 		normalizeHeights();
-		waterWeight = tileMap[MAP_SIZE / 2][MAP_SIZE / 20].getMaxHeight();
+		waterWeight = WATER_WEIGHT;
 		
 		System.out.print("Erode Rock" + "(" + EROSION_ITERATIONS +") ");
 		for (int i = 0; i < EROSION_ITERATIONS; i++) {
@@ -191,6 +195,18 @@ public class HeightmapGen extends JFrame implements KeyListener {
 		for (int i = 0; i < MAP_SIZE; i++)
 			for (int j = 0; j < MAP_SIZE; j++)
 				tileMap[i][j].setHeight(tileMap[i][j].getHeight() * normalize, true);
+		
+		float normalizeLow = 1.0f / NORMAL_LOW;
+		float normalizeHigh = 2.0f / NORMAL_HIGH;
+		for (int i = 0; i < MAP_SIZE; i++)
+			for (int j = 0; j < MAP_SIZE; j++) {
+				if (tileMap[i][j].getHeight() < NORMAL_LOW) {
+					tileMap[i][j].setHeight((tileMap[i][j].getHeight() * normalizeLow) / 3f, true);
+				} else {
+					float newHeight = 1.0f + (tileMap[i][j].getHeight() - NORMAL_LOW) * normalizeHigh;
+					tileMap[i][j].setHeight(newHeight / 3f, true);
+				}
+			}
 	}
 	
 	public void erode(boolean erodeDirt) {
@@ -297,9 +313,9 @@ public class HeightmapGen extends JFrame implements KeyListener {
 	
 	public void generateBiomes() {
 		plantBiome(MAP_SIZE / 64, 64, Tile.TILE_SAND);
-		plantBiome(MAP_SIZE / 64, 80, Tile.TILE_STEPPE);
-		plantBiome(MAP_SIZE / 128, 16, Tile.TILE_PEAT);
-		plantBiome(MAP_SIZE / 256, 64, Tile.TILE_TUNDRA);
+		plantBiome(MAP_SIZE / 128, 80, Tile.TILE_STEPPE);
+		plantBiome(MAP_SIZE / 256, 16, Tile.TILE_PEAT);
+		plantBiome(MAP_SIZE / 512, 64, Tile.TILE_TUNDRA);
 	}
 	
 	public void plantBiome(int seedCount, int growthIterations, Tile type) {
