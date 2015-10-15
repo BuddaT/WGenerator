@@ -19,7 +19,7 @@ public class MapTile {
 	public MapTile(int x, int y, float height) {
 		setX(x);
 		setY(y);
-		setHeight(height, false);
+		setHeight(height, true);
 		
 		dirtHeight = 0f;
 		

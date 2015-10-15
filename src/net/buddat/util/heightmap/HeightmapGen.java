@@ -6,29 +6,35 @@ import java.awt.Point;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.image.BufferedImage;
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Random;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.imageio.ImageIO;
 import javax.swing.JFrame;
 
 import com.wurmonline.mesh.Tiles.Tile;
 import com.wurmonline.wurmapi.api.MapData;
 import com.wurmonline.wurmapi.api.WurmAPI;
 
+import net.buddat.wgenerator.HeightMap;
+import net.buddat.wgenerator.util.SimplexNoise;
+
 public class HeightmapGen extends JFrame implements KeyListener {
 	
 	private static final long serialVersionUID = 1500559112995998883L;
 
-	public static final int MAP_SIZE = 4096;
+	public static final int MAP_SIZE = 2048;
 	public static final int WINDOW_SIZE = 1024;
 	
-	public static final float MAP_HEIGHT = 8192f;
+	public static final float MAP_HEIGHT = 4096f;
 	
 	public static final float SINGLE_DIRT = 1.0f / MAP_HEIGHT;
 	
-	public static final double RESOLUTION = MAP_SIZE / 4;
+	public static final double RESOLUTION = MAP_SIZE / 8;
 	
 	public static final float MIN_SLOPE = 0.0001f, MAX_SLOPE = 0.9f;
 	public static final float MAX_SEDIMENT = 0.01f, SEDIMENT_BASE = 0.15f;
@@ -63,9 +69,11 @@ public class HeightmapGen extends JFrame implements KeyListener {
 	public static final Random GEN_RAND = new Random(System.currentTimeMillis());
 	
 	private WurmAPI api;
+	
+	private HeightMap testing;
 
 	public HeightmapGen() {
-		super("Generator");
+		super("WGenerator - Wurm Unlimited Map Generator");
 		this.setSize(WINDOW_SIZE, WINDOW_SIZE);
 		this.setLocationRelativeTo(null);
 		this.setVisible(true);
@@ -78,12 +86,15 @@ public class HeightmapGen extends JFrame implements KeyListener {
         } catch (IOException ex) {
         	ex.printStackTrace();
         }
+        
+        if (bI == null)
+			bI = new BufferedImage(MAP_SIZE, MAP_SIZE, BufferedImage.TYPE_BYTE_GRAY);
 		
 		fullRun();
 	}
 	
 	public void fullRun() {
-		newMap();
+		newMap(false);
 		normalizeHeights();
 		waterWeight = WATER_WEIGHT;
 		
@@ -100,18 +111,35 @@ public class HeightmapGen extends JFrame implements KeyListener {
 		showMapDump(false);
 	}
 	
-	public void newMap() {
-		generate();
-		increaseLand(++currentBaseIteration);
-		increaseLand(++currentBaseIteration);
-		increaseLand(++currentBaseIteration);
-		//cleanupDregs();
-		increaseLand(++currentBaseIteration);
-		increaseLand(++currentBaseIteration);
-		//cleanupDregs();
-		increaseLand(++currentBaseIteration);
-		increaseLand(++currentBaseIteration);
-		//cleanupDregs();
+	public void newMap(boolean old) {
+		if (old) {
+			long startTime = System.currentTimeMillis();
+			generate();
+			increaseLand(++currentBaseIteration);
+			increaseLand(++currentBaseIteration);
+			increaseLand(++currentBaseIteration);
+			//cleanupDregs();
+			increaseLand(++currentBaseIteration);
+			increaseLand(++currentBaseIteration);
+			//cleanupDregs();
+			increaseLand(++currentBaseIteration);
+			increaseLand(++currentBaseIteration);
+			//cleanupDregs();
+			System.out.println("Old Heightmap Generation (" + MAP_SIZE + ") completed in " + (System.currentTimeMillis() - startTime) + "ms.");
+		} else {
+			testing = new HeightMap(System.currentTimeMillis(), MAP_SIZE, RESOLUTION, 10, 40, 8, 4096, true);
+	        testing.generateHeights();
+	        
+	        tileMap = new MapTile[MAP_SIZE][MAP_SIZE];
+	        for (int i = 0; i < MAP_SIZE; i++) {
+				for (int j = 0; j < MAP_SIZE; j++) {
+					MapTile t = new MapTile(i, j, (float) testing.getHeight(i, j));
+					tileMap[i][j] = t;
+				}
+			}
+		}
+        
+        updateMap();
 	}
 	
 	@Override
@@ -162,6 +190,7 @@ public class HeightmapGen extends JFrame implements KeyListener {
 		for (int i = 0; i < MAP_SIZE; i++) {
 			for (int j = 0; j < MAP_SIZE; j++) {
 				g.setColor(new Color(tileMap[i][j].getHeight(), tileMap[i][j].getHeight(), tileMap[i][j].getHeight()));
+				//g.setColor(new Color((float) testing.getHeight(i, j), (float) testing.getHeight(i, j), (float) testing.getHeight(i, j)));
 				g.fillRect(i, j, 1, 1);
 			}
 		}
@@ -440,7 +469,7 @@ public class HeightmapGen extends JFrame implements KeyListener {
 			normalizeHeights();
 		
 		if (e.getKeyCode() == KeyEvent.VK_SPACE)
-			newMap();
+			newMap(true);
 		
 		if (e.getKeyCode() == KeyEvent.VK_E || e.getKeyCode() == KeyEvent.VK_R) {
 			System.out.print("Erode " + (e.getKeyCode() == KeyEvent.VK_R ? "Dirt" : "Rock") + "(" + EROSION_ITERATIONS +") ");
@@ -452,6 +481,23 @@ public class HeightmapGen extends JFrame implements KeyListener {
 		
 		if (e.getKeyCode() == KeyEvent.VK_S)
 			showMapDump(false);
+		
+		if (e.getKeyCode() == KeyEvent.VK_M) {
+			System.out.println("Generating *.pngs");
+			MapData map = api.getMapData();
+			try {
+				ImageIO.write(map.createMapDump(), "png", new File("map.png"));
+				ImageIO.write(map.createTopographicDump(true, (short) 250), "png", new File("topography.png"));
+			} catch (IOException ex) {
+				Logger.getLogger(HeightmapGen.class.getName()).log(Level.SEVERE, null, ex);
+			}
+		}
+		
+		if (e.getKeyCode() == KeyEvent.VK_P) {
+			System.out.println("Saving map");
+			api.getMapData().saveChanges();
+			api.close();
+		}
 		
 		if (e.getKeyCode() == KeyEvent.VK_G)
 			plantBiome(MAP_SIZE / 2, GRASS_ITERATIONS, Tile.TILE_GRASS);
