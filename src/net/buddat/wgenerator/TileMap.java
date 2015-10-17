@@ -21,6 +21,8 @@ public class TileMap {
 	
 	private Tile[][] oreTypeMap;
 	
+	private short[][] oreResourceMap;
+	
 	private short[][] dirtMap;
 	
 	private double singleDirt;
@@ -37,6 +39,7 @@ public class TileMap {
 		
 		this.typeMap = new Tile[heightMap.getMapSize()][heightMap.getMapSize()];
 		this.oreTypeMap = new Tile[heightMap.getMapSize()][heightMap.getMapSize()];
+		this.oreResourceMap = new short[heightMap.getMapSize()][heightMap.getMapSize()];
 		this.dirtMap = new short[heightMap.getMapSize()][heightMap.getMapSize()];
 		
 		this.lastBiomeChanges = new HashMap<Point, Tile>();
@@ -75,29 +78,29 @@ public class TileMap {
 				double total;
 				
 				if (rand < (total = rates[0]))
-					setOreType(x, y, Tile.TILE_CAVE_WALL);
+					setOreType(x, y, Tile.TILE_CAVE_WALL, biomeRandom.nextInt(20) + 40);
 				else if (rand < (total += rates[1]))
-					setOreType(x, y, Tile.TILE_CAVE_WALL_ORE_IRON);
+					setOreType(x, y, Tile.TILE_CAVE_WALL_ORE_IRON, biomeRandom.nextInt(15000) + 90);
 				else if (rand < (total += rates[2]))
-					setOreType(x, y, Tile.TILE_CAVE_WALL_ORE_GOLD);
+					setOreType(x, y, Tile.TILE_CAVE_WALL_ORE_GOLD, biomeRandom.nextInt(15000) + 90);
 				else if (rand < (total += rates[3]))
-					setOreType(x, y, Tile.TILE_CAVE_WALL_ORE_SILVER);
+					setOreType(x, y, Tile.TILE_CAVE_WALL_ORE_SILVER, biomeRandom.nextInt(15000) + 90);
 				else if (rand < (total += rates[4]))
-					setOreType(x, y, Tile.TILE_CAVE_WALL_ORE_ZINC);
+					setOreType(x, y, Tile.TILE_CAVE_WALL_ORE_ZINC, biomeRandom.nextInt(15000) + 90);
 				else if (rand < (total += rates[5]))
-					setOreType(x, y, Tile.TILE_CAVE_WALL_ORE_COPPER);
+					setOreType(x, y, Tile.TILE_CAVE_WALL_ORE_COPPER, biomeRandom.nextInt(15000) + 90);
 				else if (rand < (total += rates[6]))
-					setOreType(x, y, Tile.TILE_CAVE_WALL_ORE_LEAD);
+					setOreType(x, y, Tile.TILE_CAVE_WALL_ORE_LEAD, biomeRandom.nextInt(15000) + 90);
 				else if (rand < (total += rates[7]))
-					setOreType(x, y, Tile.TILE_CAVE_WALL_ORE_TIN);
+					setOreType(x, y, Tile.TILE_CAVE_WALL_ORE_TIN, biomeRandom.nextInt(15000) + 90);
 				else if (rand < (total += rates[8]))
-					setOreType(x, y, Tile.TILE_CAVE_WALL_ORE_ADAMANTINE);
+					setOreType(x, y, Tile.TILE_CAVE_WALL_ORE_ADAMANTINE, biomeRandom.nextInt(15000) + 90);
 				else if (rand < (total += rates[9]))
-					setOreType(x, y, Tile.TILE_CAVE_WALL_ORE_GLIMMERSTEEL);
+					setOreType(x, y, Tile.TILE_CAVE_WALL_ORE_GLIMMERSTEEL, biomeRandom.nextInt(15000) + 90);
 				else if (rand < (total += rates[10]))
-					setOreType(x, y, Tile.TILE_CAVE_WALL_MARBLE);
+					setOreType(x, y, Tile.TILE_CAVE_WALL_MARBLE, biomeRandom.nextInt(15000) + 90);
 				else if (rand < (total += rates[11]))
-					setOreType(x, y, Tile.TILE_CAVE_WALL_SLATE);
+					setOreType(x, y, Tile.TILE_CAVE_WALL_SLATE, biomeRandom.nextInt(15000) + 90);
 			}
 		}
 		
@@ -134,9 +137,6 @@ public class TileMap {
 		int dirMod = (type.isTree() ? biomeRandom.nextInt(6) + 2 : (type.isBush() ? biomeRandom.nextInt(3) + 2 : 1));
 		
 		for (Point p : fromList) {
-			/*if (!setBiome(null, p, maxBiomeSlope, type, minHeight, maxHeight))
-				continue;*/
-			
 			if (biomeRandom.nextDouble() < growthRate[0]) { //North
 				Point nT = new Point((int) p.getX(), HeightMap.clamp((int) (p.getY() - dirMod), 0, heightMap.getMapSize() - 1));
 				if (setBiome(p, nT, maxBiomeSlope, type, minHeight, maxHeight))
@@ -219,15 +219,24 @@ public class TileMap {
 		return getOreType((int) p.getX(), (int) p.getY());
 	}
 	
-	public void setOreType(int x, int y, Tile newType) {
+	public void setOreCount(int x, int y, int resourceCount) {
+		oreResourceMap[x][y] = (short) resourceCount;
+	}
+	
+	public short getOreCount(int x, int y) {
+		return oreResourceMap[x][y];
+	}
+	
+	public void setOreType(int x, int y, Tile newType, int resourceCount) {
 		if (!newType.isCave())
 			newType = Tile.TILE_CAVE_WALL;
 		
 		oreTypeMap[x][y] = newType;
+		setOreCount(x, y, resourceCount);
 	}
 	
-	public void setOreType(Point p, Tile newType) {
-		setOreType((int) p.getX(), (int) p.getY(), newType);
+	public void setOreType(Point p, Tile newType, short resourceCount) {
+		setOreType((int) p.getX(), (int) p.getY(), newType, resourceCount);
 	}
 	
 	public short getDirt(int x, int y) {
