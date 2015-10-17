@@ -1,5 +1,6 @@
 package net.buddat.wgenerator.util;
 
+import javax.swing.JLabel;
 
 /**
  * @author Budda
@@ -9,7 +10,7 @@ package net.buddat.wgenerator.util;
 public class Constants {
 	
 	public static final String WINDOW_TITLE = "WGenerator - Map Generator for Wurm Unlimited";
-	public static final int WINDOW_SIZE = 1024;
+	public static final int WINDOW_SIZE = 768;
 	
 	public static final int MAP_SIZE = 2048;
 	public static final float MAP_HEIGHT = 4096f;
@@ -26,17 +27,22 @@ public class Constants {
 	
 	public static final int DIRT_DROP_COUNT = 60;
 	public static final int MAX_DIRT_SLOPE = 40;
+	public static final int MAX_DIRT_DIAG_SLOPE = 56;
+	public static final int WATER_HEIGHT = 500;
 	
 	public static final int EROSION_ITERATIONS = 25;
+	public static final int ROCK_WEIGHT = 3800;
 	
 	public static final int GRASS_ITERATIONS = 50;
-	public static final float BIOME_RATE = 0.6f;
-	public static final float BIOME_MAX_SLOPE = SINGLE_DIRT * 20;
+	public static final int BIOME_RATE = 60;
+	public static final int BIOME_MAX_SLOPE = 20;
+	public static final int BIOME_SEEDS = 50;
+	public static final int BIOME_SIZE = 60;
+	public static final int BIOME_MIN_HEIGHT = WATER_HEIGHT;
+	public static final int BIOME_MAX_HEIGHT = ROCK_WEIGHT;
 	
-	public static final float WATER_WEIGHT = 0.125f;
-	public static final float SAND_WEIGHT = 1.075f;
-	public static final float ROCK_WEIGHT = 0.95f;
-	public static final float ROCK_SLOPE_WEIGHT = 0.0005f;
+	public static final double ORE_ROCK = 80, ORE_IRON = 8, ORE_GOLD = 0.5, ORE_SILVER = 1, ORE_ZINC = 1.5, 
+			ORE_COPPER = 2, ORE_LEAD = 2, ORE_TIN = 2, ORE_ADDY = 0, ORE_GLIMMER = 0, ORE_MARBLE = 1, ORE_SLATE = 2;
 	
 	public static final float NORMAL_LOW = 0.5f;
 	public static final float NORMAL_HIGH = 1.0f - NORMAL_LOW;

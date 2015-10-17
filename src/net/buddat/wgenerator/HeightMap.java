@@ -3,7 +3,6 @@ package net.buddat.wgenerator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import net.buddat.wgenerator.util.Constants;
 import net.buddat.wgenerator.util.SimplexNoise;
 
 /**
@@ -33,7 +32,9 @@ public class HeightMap {
 	private int maxHeight;
 	
 	private int borderCutoff;
+	
 	private float borderNormalize;
+	
 	private double singleDirt;
 	
 	public HeightMap(long seed, int mapSize, double resolution, int iterations, int minimumEdge, double borderWeight, int maxHeight, boolean moreLand) {
@@ -74,7 +75,40 @@ public class HeightMap {
 					setHeight(x, y, getHeight(x, y) + SimplexNoise.noise(x / iRes, y / iRes) / str, (i == iterations - 1));
 		}
 		
-		logger.log(Level.INFO, "Heightmap Generation (" + mapSize + ") completed in " + (System.currentTimeMillis() - startTime) + "ms.");
+		logger.log(Level.INFO, "HeightMap Generation (" + mapSize + ") completed in " + (System.currentTimeMillis() - startTime) + "ms.");
+		
+		normalizeHeights();
+	}
+	
+	public void normalizeHeights() {
+		long startTime = System.currentTimeMillis();
+		
+		double maxHeight = 0.0f;
+		for (int i = 0; i < mapSize; i++) {
+			for (int j = 0; j < mapSize; j++) {
+				if (getHeight(i, j) > maxHeight)
+					maxHeight = getHeight(i, j);
+			}
+		}
+		
+		double normalize = 1.0f / maxHeight;
+		for (int i = 0; i < mapSize; i++)
+			for (int j = 0; j < mapSize; j++)
+				setHeight(i, j, getHeight(i, j) * normalize, false);
+		
+		double normalizeLow = 1.0 / 0.5;
+		double normalizeHigh = 2.0f / 0.5;
+		for (int i = 0; i < mapSize; i++)
+			for (int j = 0; j < mapSize; j++) {
+				if (getHeight(i, j) < 0.5) {
+					setHeight(i, j, (getHeight(i, j) * normalizeLow) / 3.0, false);
+				} else {
+					double newHeight = 1.0f + (getHeight(i, j) - 0.5) * normalizeHigh;
+					setHeight(i, j, newHeight / 3.0, false);
+				}
+			}
+		
+		logger.log(Level.INFO, "HeightMap Normalization (" + mapSize + ") completed in " + (System.currentTimeMillis() - startTime) + "ms.");
 	}
 	
 	public void erode(int iterations, int minSlope, int sedimentMax) {
@@ -204,6 +238,10 @@ public class HeightMap {
 	
 	public void setIterations(int newIterations) {
 		this.iterations = newIterations;
+	}
+	
+	public double getSingleDirt() {
+		return singleDirt;
 	}
 	
 	public static int clamp(int val, int min, int max) {
