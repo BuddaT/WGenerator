@@ -932,7 +932,9 @@ public class WGenerator extends JFrame implements ActionListener, FocusListener 
 		}
 		
 		if (e.getSource() == btnResetHeightSeed) {
-			txtSeed.setText("" + System.currentTimeMillis());
+                        long newSeed = System.currentTimeMillis();
+			txtSeed.setText("" + newSeed);
+                        txtName.setText("" + newSeed);
 		}
 		
 		if (e.getSource() == btnResetBiomeSeed) {
