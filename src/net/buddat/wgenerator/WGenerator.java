@@ -486,7 +486,7 @@ public class WGenerator extends JFrame implements ActionListener, FocusListener 
 	public WurmAPI getAPI() {
 		if (api == null)
 			try {
-				api = WurmAPI.create("./maps/" + heightMap.getSeed() + "/", (int) (Math.log(heightMap.getMapSize()) / Math.log(2)));
+				api = WurmAPI.create("./maps/" + txtSeed.getText() + "/", (int) (Math.log(heightMap.getMapSize()) / Math.log(2)));
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
@@ -859,9 +859,9 @@ public class WGenerator extends JFrame implements ActionListener, FocusListener 
 			
 			MapData map = getAPI().getMapData();
 			try {
-				ImageIO.write(map.createMapDump(), "png", new File("./maps/" + heightMap.getSeed() + "/map.png"));
-				ImageIO.write(map.createTopographicDump(true, (short) 250), "png", new File("./maps/" + heightMap.getSeed() + "/topography.png"));
-				ImageIO.write(map.createCaveDump(true), "png", new File("./maps/" + heightMap.getSeed() + "/cave.png"));
+				ImageIO.write(map.createMapDump(), "png", new File("./maps/" + txtSeed.getText() + "/map.png"));
+				ImageIO.write(map.createTopographicDump(true, (short) 250), "png", new File("./maps/" + txtSeed.getText() + "/topography.png"));
+				ImageIO.write(map.createCaveDump(true), "png", new File("./maps/" + txtSeed.getText() + "/cave.png"));
 			} catch (IOException ex) {
 				logger.log(Level.SEVERE, null, ex);
 			}
@@ -888,7 +888,7 @@ public class WGenerator extends JFrame implements ActionListener, FocusListener 
 			}
 			
 			try {
-				File actionsFile = new File("./maps/" + heightMap.getSeed() + "/map_actions.txt");
+				File actionsFile = new File("./maps/" + txtSeed.getText() + "/map_actions.txt");
 				actionsFile.createNewFile();
 				
 				BufferedWriter bw = new BufferedWriter(new FileWriter(actionsFile));
@@ -908,7 +908,7 @@ public class WGenerator extends JFrame implements ActionListener, FocusListener 
 			}
 			
 			try {
-				File actionsFile = new File("./maps/" + heightMap.getSeed() + "/map_actions.txt");
+				File actionsFile = new File("./maps/" + txtSeed.getText() + "/map_actions.txt");
 				
 				BufferedReader br = new BufferedReader(new FileReader(actionsFile));
 				String line;
