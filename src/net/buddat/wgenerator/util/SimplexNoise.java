@@ -1,4 +1,4 @@
-package net.buddat.util.heightmap;
+package net.buddat.wgenerator.util;
 
 import java.util.Random;
  
