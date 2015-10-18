@@ -151,7 +151,7 @@ public class HeightMap {
 			}
 		}
 		
-		logger.log(Level.INFO, "Heightmap Erosion (" + iterations + ") completed in " + (System.currentTimeMillis() - startTime) + "ms.");
+		logger.log(Level.INFO, "HeightMap Erosion (" + iterations + ") completed in " + (System.currentTimeMillis() - startTime) + "ms.");
 	}
 	
 	public double[][] getHeightArray() {

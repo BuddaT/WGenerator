@@ -1,7 +1,5 @@
 package net.buddat.wgenerator.util;
 
-import javax.swing.JLabel;
-
 /**
  * @author Budda
  *
@@ -41,8 +39,8 @@ public class Constants {
 	public static final int BIOME_MIN_HEIGHT = WATER_HEIGHT;
 	public static final int BIOME_MAX_HEIGHT = ROCK_WEIGHT;
 	
-	public static final double ORE_ROCK = 80, ORE_IRON = 8, ORE_GOLD = 0.5, ORE_SILVER = 1, ORE_ZINC = 1.5, 
-			ORE_COPPER = 2, ORE_LEAD = 2, ORE_TIN = 2, ORE_ADDY = 0, ORE_GLIMMER = 0, ORE_MARBLE = 1, ORE_SLATE = 2;
+	public static final double ORE_ROCK = 90, ORE_IRON = 4, ORE_GOLD = 0.25, ORE_SILVER = 0.5, ORE_ZINC = 0.75, 
+			ORE_COPPER = 1, ORE_LEAD = 1, ORE_TIN = 1, ORE_ADDY = 0, ORE_GLIMMER = 0, ORE_MARBLE = 0.5, ORE_SLATE = 1;
 	
 	public static final float NORMAL_LOW = 0.5f;
 	public static final float NORMAL_HIGH = 1.0f - NORMAL_LOW;

@@ -31,6 +31,8 @@ public class TileMap {
 	
 	private double waterHeight;
 	
+	private boolean hasOres;
+	
 	private HashMap<Point, Tile> lastBiomeChanges;
 	
 	public TileMap(HeightMap heightMap) {
@@ -42,22 +44,27 @@ public class TileMap {
 		this.oreResourceMap = new short[heightMap.getMapSize()][heightMap.getMapSize()];
 		this.dirtMap = new short[heightMap.getMapSize()][heightMap.getMapSize()];
 		
+		this.hasOres = false;
+		
 		this.lastBiomeChanges = new HashMap<Point, Tile>();
 	}
 	
 	public void dropDirt(int dirtCount, int maxSlope, int maxDiagSlope, int maxDirtHeight) {
-		if (biomeRandom == null) 
-			biomeRandom = new Random(biomeSeed);
-		
 		double maxSlopeHeight = maxSlope * singleDirt;
 		double maxDiagSlopeHeight = maxDiagSlope * singleDirt;
+		double maxHeight = maxDirtHeight * singleDirt;
+		double taperHeight = maxHeight - ((dirtCount / 2) * singleDirt);
 		
 		long startTime = System.currentTimeMillis();
 		for (int i = 0; i < dirtCount; i++) {
 			for (int x = 0; x < heightMap.getMapSize(); x++) {
 				for (int y = 0; y < heightMap.getMapSize(); y++) {
-					if (getTileHeight(x, y) > maxDirtHeight * singleDirt)
+					if (heightMap.getHeight(x, y) > maxHeight)
 						continue;
+					
+					if (heightMap.getHeight(x, y) > taperHeight)
+						if ((maxHeight - heightMap.getHeight(x, y)) * heightMap.getMaxHeight() < i)
+							continue;
 					
 					Point dropTile = findDropTile(x, y, maxSlopeHeight, maxDiagSlopeHeight);
 					
@@ -101,8 +108,12 @@ public class TileMap {
 					setOreType(x, y, Tile.TILE_CAVE_WALL_MARBLE, biomeRandom.nextInt(15000) + 90);
 				else if (rand < (total += rates[11]))
 					setOreType(x, y, Tile.TILE_CAVE_WALL_SLATE, biomeRandom.nextInt(15000) + 90);
+				else
+					setOreType(x, y, Tile.TILE_CAVE_WALL, biomeRandom.nextInt(20) + 40);
 			}
 		}
+		
+		hasOres = true;
 		
 		logger.log(Level.INFO, "Ore Generation completed in " + (System.currentTimeMillis() - startTime) + "ms.");
 	}
@@ -139,25 +150,25 @@ public class TileMap {
 		for (Point p : fromList) {
 			if (biomeRandom.nextDouble() < growthRate[0]) { //North
 				Point nT = new Point((int) p.getX(), HeightMap.clamp((int) (p.getY() - dirMod), 0, heightMap.getMapSize() - 1));
-				if (setBiome(p, nT, maxBiomeSlope, type, minHeight, maxHeight))
+				if (setBiome(p, nT, maxBiomeSlope * dirMod, type, minHeight, maxHeight))
 					nextList.add(nT);
 			}
 			
 			if (biomeRandom.nextDouble() < growthRate[1]) { //South
 				Point nT = new Point((int) p.getX(), HeightMap.clamp((int) (p.getY() + dirMod), 0, heightMap.getMapSize() - 1));
-				if (setBiome(p, nT, maxBiomeSlope, type, minHeight, maxHeight))
+				if (setBiome(p, nT, maxBiomeSlope * dirMod, type, minHeight, maxHeight))
 					nextList.add(nT);
 			}
 			
 			if (biomeRandom.nextDouble() < growthRate[2]) { //East
 				Point nT = new Point(HeightMap.clamp((int) (p.getX() + dirMod), 0, heightMap.getMapSize() - 1), (int) p.getY());
-				if (setBiome(p, nT, maxBiomeSlope, type, minHeight, maxHeight))
+				if (setBiome(p, nT, maxBiomeSlope * dirMod, type, minHeight, maxHeight))
 					nextList.add(nT);
 			}
 			
 			if (biomeRandom.nextDouble() < growthRate[3]) { //West
 				Point nT = new Point(HeightMap.clamp((int) (p.getX() - dirMod), 0, heightMap.getMapSize() - 1), (int) p.getY());
-				if (setBiome(p, nT, maxBiomeSlope, type, minHeight, maxHeight))
+				if (setBiome(p, nT, maxBiomeSlope * dirMod, type, minHeight, maxHeight))
 					nextList.add(nT);
 			}
 		}
@@ -179,11 +190,14 @@ public class TileMap {
 		if (getTileHeight((int) to.getX(), (int) to.getY()) > (singleDirt * maxHeight))
 			return false;
 		
-		if (getType((int) to.getX(), (int) to.getY()) != type) {
-			lastBiomeChanges.put(to, getType(to));
-			
-			setType(to, type);
-			return true;
+		Tile originalTileType = getType((int) to.getX(), (int) to.getY());
+		if (originalTileType != type) {
+			if((!type.isTree() && !type.isBush()) || originalTileType == Tile.TILE_GRASS) {
+				lastBiomeChanges.put(to, getType(to));
+				
+				setType(to, type);
+				return true;
+			}
 		}
 		
 		return false;
@@ -237,6 +251,10 @@ public class TileMap {
 	
 	public void setOreType(Point p, Tile newType, short resourceCount) {
 		setOreType((int) p.getX(), (int) p.getY(), newType, resourceCount);
+	}
+	
+	public boolean hasOres() {
+		return hasOres;
 	}
 	
 	public short getDirt(int x, int y) {
