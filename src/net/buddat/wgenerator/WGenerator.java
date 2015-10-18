@@ -26,6 +26,7 @@ import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -33,6 +34,8 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
+import javax.swing.filechooser.FileFilter;
+import javax.swing.filechooser.FileView;
 
 import com.wurmonline.mesh.FoliageAge;
 import com.wurmonline.mesh.GrassData.GrowthTreeStage;
@@ -911,23 +914,31 @@ public class WGenerator extends JFrame implements ActionListener, FocusListener 
 		}
 		
 		if (e.getSource() == btnLoadActions) {
-			if (tileMap == null) {
-				JOptionPane.showMessageDialog(this, "TileMap does not exist - Add Dirt first", "Error Saving Map", JOptionPane.ERROR_MESSAGE);
-				return;
-			}
-			
 			try {
-				File actionsFile = new File("./maps/" + txtName.getText() + "/map_actions.txt");
+				File actionsFile;
 				
-				BufferedReader br = new BufferedReader(new FileReader(actionsFile));
-				String line;
-				while ((line = br.readLine()) != null) {
-					parseAction(line);
-				}
+				JFileChooser fc = new JFileChooser();
+				fc.addChoosableFileFilter(new TextFileView());
+				fc.setAcceptAllFileFilterUsed(false);
+				fc.setCurrentDirectory(new File("./maps/"));
 				
-				br.close();
+				int returnVal = fc.showDialog(this, "Load Actions");
+
+		        if (returnVal == JFileChooser.APPROVE_OPTION) {
+		            actionsFile = fc.getSelectedFile();
+		            txtName.setText(actionsFile.getParentFile().getName());
+		            
+					BufferedReader br = new BufferedReader(new FileReader(actionsFile));
+					String line;
+					while ((line = br.readLine()) != null) {
+						parseAction(line);
+					}
+					
+					br.close();
+		        }
 			} catch (IOException ex) {
-				logger.log(Level.SEVERE, null, ex);
+				JOptionPane.showMessageDialog(this, "Unable to load actions file", "Error Loading Map", JOptionPane.ERROR_MESSAGE);
+				logger.log(Level.WARNING, "Error loading actions file: " + ex.getMessage());
 			}
 		}
 		
@@ -975,6 +986,38 @@ public class WGenerator extends JFrame implements ActionListener, FocusListener 
 				
 				}
 			}
+		}
+	}
+	
+	class TextFileView extends FileFilter {
+		
+		public boolean accept(File f) {
+		    if (f.isDirectory()) {
+		        return true;
+		    }
+
+		    String extension = getExtension(f);
+		    if (extension != null)
+		        if (extension.equals("txt"))
+		                return true;
+
+		    return false;
+		}
+		
+		private String getExtension(File f) {
+	        String ext = null;
+	        String s = f.getName();
+	        int i = s.lastIndexOf('.');
+
+	        if (i > 0 &&  i < s.length() - 1) {
+	            ext = s.substring(i+1).toLowerCase();
+	        }
+	        return ext;
+	    }
+
+		@Override
+		public String getDescription() {
+			return "Action Files (.txt)";
 		}
 	}
 }
