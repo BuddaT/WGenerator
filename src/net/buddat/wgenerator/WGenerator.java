@@ -91,6 +91,8 @@ public class WGenerator extends JFrame implements ActionListener, FocusListener 
 	
 	private ArrayList<String> genHistory;
 	
+	private boolean apiClosed = true;
+	
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public WGenerator(String title, int width, int height) {
 		super(title);
@@ -437,6 +439,7 @@ public class WGenerator extends JFrame implements ActionListener, FocusListener 
 		pnlOreControls.add(pnlOreButton, BorderLayout.SOUTH);
 		
 		txtName = new JTextField(txtSeed.getText(), 10);
+		txtName.addFocusListener(this);
 		btnSaveActions = new JButton("Save Actions");
 		btnSaveActions.addActionListener(this);
 		btnLoadActions = new JButton("Load Actions");
@@ -487,9 +490,13 @@ public class WGenerator extends JFrame implements ActionListener, FocusListener 
 	}
 	
 	public WurmAPI getAPI() {
+		if (apiClosed)
+			api = null;
+		
 		if (api == null)
 			try {
 				api = WurmAPI.create("./maps/" + txtName.getText() + "/", (int) (Math.log(heightMap.getMapSize()) / Math.log(2)));
+				apiClosed = false;
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
@@ -877,11 +884,10 @@ public class WGenerator extends JFrame implements ActionListener, FocusListener 
 			}
 			
 			updateAPIMap();
+			
 			getAPI().getMapData().saveChanges();
 			getAPI().close();
-			
-			api = null;
-			updateAPIMap();
+			apiClosed = true;
 		}
 		
 		if (e.getSource() == btnSaveActions) {
@@ -946,20 +952,28 @@ public class WGenerator extends JFrame implements ActionListener, FocusListener 
 	@Override
 	public void focusLost(FocusEvent e) {
 		if (e.getSource() instanceof JTextField) {
-			try {
-				double[] rates = { Double.parseDouble(txtIron.getText()), Double.parseDouble(txtGold.getText()),
-						Double.parseDouble(txtSilver.getText()), Double.parseDouble(txtZinc.getText()), Double.parseDouble(txtCopper.getText()),
-						Double.parseDouble(txtLead.getText()), Double.parseDouble(txtTin.getText()), Double.parseDouble(txtAddy.getText()),
-						Double.parseDouble(txtGlimmer.getText()), Double.parseDouble(txtMarble.getText()), Double.parseDouble(txtSlate.getText())					
-				};
+			if (e.getSource() == txtName) {
+				if (!apiClosed)
+					getAPI().close();
 				
-				double total = 0;
-				for (int i = 0; i < rates.length; i++)
-					total += rates[i];
+				apiClosed = true;
+				updateAPIMap();
+			} else {
+				try {
+					double[] rates = { Double.parseDouble(txtIron.getText()), Double.parseDouble(txtGold.getText()),
+							Double.parseDouble(txtSilver.getText()), Double.parseDouble(txtZinc.getText()), Double.parseDouble(txtCopper.getText()),
+							Double.parseDouble(txtLead.getText()), Double.parseDouble(txtTin.getText()), Double.parseDouble(txtAddy.getText()),
+							Double.parseDouble(txtGlimmer.getText()), Double.parseDouble(txtMarble.getText()), Double.parseDouble(txtSlate.getText())					
+					};
+					
+					double total = 0;
+					for (int i = 0; i < rates.length; i++)
+						total += rates[i];
+					
+					txtRock.setText("" + (100.0 - total));
+				} catch (NumberFormatException nfe) {
 				
-				txtRock.setText("" + (100.0 - total));
-			} catch (NumberFormatException nfe) {
-			
+				}
 			}
 		}
 	}
