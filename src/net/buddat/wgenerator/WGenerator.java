@@ -77,6 +77,7 @@ public class WGenerator extends JFrame implements ActionListener, FocusListener 
 	private JTextField txtBiomeSeedCount, txtBiomeSize, txtBiomeMaxSlope, txtBiomeRateN, txtBiomeRateS, txtBiomeRateE, txtBiomeRateW, 
 			txtBiomeMinHeight, txtBiomeMaxHeight;
 	private JTextField txtRock, txtIron, txtGold, txtSilver, txtZinc, txtCopper, txtLead, txtTin, txtAddy, txtGlimmer, txtMarble, txtSlate;
+	private JTextField txtName;
 	
 	private JCheckBox chkLand;
 	
@@ -435,6 +436,7 @@ public class WGenerator extends JFrame implements ActionListener, FocusListener 
 		pnlOreControls.add(pnlOreOptionsMiddle, BorderLayout.CENTER);
 		pnlOreControls.add(pnlOreButton, BorderLayout.SOUTH);
 		
+		txtName = new JTextField(txtSeed.getText(), 10);
 		btnSaveActions = new JButton("Save Actions");
 		btnSaveActions.addActionListener(this);
 		btnLoadActions = new JButton("Load Actions");
@@ -452,6 +454,7 @@ public class WGenerator extends JFrame implements ActionListener, FocusListener 
 		btnShowHeightMap = new JButton("Show Height View");
 		btnShowHeightMap.addActionListener(this);
 		
+		pnlSaveOptions.add(txtName);
 		pnlSaveOptions.add(btnSaveActions);
 		pnlSaveOptions.add(btnLoadActions);
 		pnlSaveOptions.add(btnSaveImages);
@@ -486,7 +489,7 @@ public class WGenerator extends JFrame implements ActionListener, FocusListener 
 	public WurmAPI getAPI() {
 		if (api == null)
 			try {
-				api = WurmAPI.create("./maps/" + txtSeed.getText() + "/", (int) (Math.log(heightMap.getMapSize()) / Math.log(2)));
+				api = WurmAPI.create("./maps/" + txtName.getText() + "/", (int) (Math.log(heightMap.getMapSize()) / Math.log(2)));
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
@@ -859,9 +862,9 @@ public class WGenerator extends JFrame implements ActionListener, FocusListener 
 			
 			MapData map = getAPI().getMapData();
 			try {
-				ImageIO.write(map.createMapDump(), "png", new File("./maps/" + txtSeed.getText() + "/map.png"));
-				ImageIO.write(map.createTopographicDump(true, (short) 250), "png", new File("./maps/" + txtSeed.getText() + "/topography.png"));
-				ImageIO.write(map.createCaveDump(true), "png", new File("./maps/" + txtSeed.getText() + "/cave.png"));
+				ImageIO.write(map.createMapDump(), "png", new File("./maps/" + txtName.getText() + "/map.png"));
+				ImageIO.write(map.createTopographicDump(true, (short) 250), "png", new File("./maps/" + txtName.getText() + "/topography.png"));
+				ImageIO.write(map.createCaveDump(true), "png", new File("./maps/" + txtName.getText() + "/cave.png"));
 			} catch (IOException ex) {
 				logger.log(Level.SEVERE, null, ex);
 			}
@@ -888,7 +891,7 @@ public class WGenerator extends JFrame implements ActionListener, FocusListener 
 			}
 			
 			try {
-				File actionsFile = new File("./maps/" + txtSeed.getText() + "/map_actions.txt");
+				File actionsFile = new File("./maps/" + txtName.getText() + "/map_actions.txt");
 				actionsFile.createNewFile();
 				
 				BufferedWriter bw = new BufferedWriter(new FileWriter(actionsFile));
@@ -908,7 +911,7 @@ public class WGenerator extends JFrame implements ActionListener, FocusListener 
 			}
 			
 			try {
-				File actionsFile = new File("./maps/" + txtSeed.getText() + "/map_actions.txt");
+				File actionsFile = new File("./maps/" + txtName.getText() + "/map_actions.txt");
 				
 				BufferedReader br = new BufferedReader(new FileReader(actionsFile));
 				String line;
