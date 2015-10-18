@@ -77,6 +77,7 @@ public class WGenerator extends JFrame implements ActionListener, FocusListener 
 	private JTextField txtBiomeSeedCount, txtBiomeSize, txtBiomeMaxSlope, txtBiomeRateN, txtBiomeRateS, txtBiomeRateE, txtBiomeRateW, 
 			txtBiomeMinHeight, txtBiomeMaxHeight;
 	private JTextField txtRock, txtIron, txtGold, txtSilver, txtZinc, txtCopper, txtLead, txtTin, txtAddy, txtGlimmer, txtMarble, txtSlate;
+	private JTextField txtName;
 	
 	private JCheckBox chkLand;
 	
@@ -89,6 +90,8 @@ public class WGenerator extends JFrame implements ActionListener, FocusListener 
 	private JButton btnSaveActions, btnLoadActions, btnSaveImages, btnSaveMap, btnShowDump, btnShowTopo, btnShowCave, btnShowHeightMap;
 	
 	private ArrayList<String> genHistory;
+	
+	private boolean apiClosed = true;
 	
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public WGenerator(String title, int width, int height) {
@@ -435,6 +438,8 @@ public class WGenerator extends JFrame implements ActionListener, FocusListener 
 		pnlOreControls.add(pnlOreOptionsMiddle, BorderLayout.CENTER);
 		pnlOreControls.add(pnlOreButton, BorderLayout.SOUTH);
 		
+		txtName = new JTextField(txtSeed.getText(), 10);
+		txtName.addFocusListener(this);
 		btnSaveActions = new JButton("Save Actions");
 		btnSaveActions.addActionListener(this);
 		btnLoadActions = new JButton("Load Actions");
@@ -452,6 +457,7 @@ public class WGenerator extends JFrame implements ActionListener, FocusListener 
 		btnShowHeightMap = new JButton("Show Height View");
 		btnShowHeightMap.addActionListener(this);
 		
+		pnlSaveOptions.add(txtName);
 		pnlSaveOptions.add(btnSaveActions);
 		pnlSaveOptions.add(btnLoadActions);
 		pnlSaveOptions.add(btnSaveImages);
@@ -484,9 +490,13 @@ public class WGenerator extends JFrame implements ActionListener, FocusListener 
 	}
 	
 	public WurmAPI getAPI() {
+		if (apiClosed)
+			api = null;
+		
 		if (api == null)
 			try {
-				api = WurmAPI.create("./", (int) (Math.log(heightMap.getMapSize()) / Math.log(2)));
+				api = WurmAPI.create("./maps/" + txtName.getText() + "/", (int) (Math.log(heightMap.getMapSize()) / Math.log(2)));
+				apiClosed = false;
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
@@ -859,9 +869,9 @@ public class WGenerator extends JFrame implements ActionListener, FocusListener 
 			
 			MapData map = getAPI().getMapData();
 			try {
-				ImageIO.write(map.createMapDump(), "png", new File("map.png"));
-				ImageIO.write(map.createTopographicDump(true, (short) 250), "png", new File("topography.png"));
-				ImageIO.write(map.createCaveDump(true), "png", new File("cave.png"));
+				ImageIO.write(map.createMapDump(), "png", new File("./maps/" + txtName.getText() + "/map.png"));
+				ImageIO.write(map.createTopographicDump(true, (short) 250), "png", new File("./maps/" + txtName.getText() + "/topography.png"));
+				ImageIO.write(map.createCaveDump(true), "png", new File("./maps/" + txtName.getText() + "/cave.png"));
 			} catch (IOException ex) {
 				logger.log(Level.SEVERE, null, ex);
 			}
@@ -874,12 +884,20 @@ public class WGenerator extends JFrame implements ActionListener, FocusListener 
 			}
 			
 			updateAPIMap();
+			
 			getAPI().getMapData().saveChanges();
+			getAPI().close();
+			apiClosed = true;
 		}
 		
 		if (e.getSource() == btnSaveActions) {
+			if (tileMap == null) {
+				JOptionPane.showMessageDialog(this, "TileMap does not exist - Add Dirt first", "Error Saving Map", JOptionPane.ERROR_MESSAGE);
+				return;
+			}
+			
 			try {
-				File actionsFile = new File("./map_actions.txt");
+				File actionsFile = new File("./maps/" + txtName.getText() + "/map_actions.txt");
 				actionsFile.createNewFile();
 				
 				BufferedWriter bw = new BufferedWriter(new FileWriter(actionsFile));
@@ -893,14 +911,21 @@ public class WGenerator extends JFrame implements ActionListener, FocusListener 
 		}
 		
 		if (e.getSource() == btnLoadActions) {
+			if (tileMap == null) {
+				JOptionPane.showMessageDialog(this, "TileMap does not exist - Add Dirt first", "Error Saving Map", JOptionPane.ERROR_MESSAGE);
+				return;
+			}
+			
 			try {
-				File actionsFile = new File("./map_actions.txt");
+				File actionsFile = new File("./maps/" + txtName.getText() + "/map_actions.txt");
 				
 				BufferedReader br = new BufferedReader(new FileReader(actionsFile));
 				String line;
 				while ((line = br.readLine()) != null) {
 					parseAction(line);
 				}
+				
+				br.close();
 			} catch (IOException ex) {
 				logger.log(Level.SEVERE, null, ex);
 			}
@@ -927,20 +952,28 @@ public class WGenerator extends JFrame implements ActionListener, FocusListener 
 	@Override
 	public void focusLost(FocusEvent e) {
 		if (e.getSource() instanceof JTextField) {
-			try {
-				double[] rates = { Double.parseDouble(txtIron.getText()), Double.parseDouble(txtGold.getText()),
-						Double.parseDouble(txtSilver.getText()), Double.parseDouble(txtZinc.getText()), Double.parseDouble(txtCopper.getText()),
-						Double.parseDouble(txtLead.getText()), Double.parseDouble(txtTin.getText()), Double.parseDouble(txtAddy.getText()),
-						Double.parseDouble(txtGlimmer.getText()), Double.parseDouble(txtMarble.getText()), Double.parseDouble(txtSlate.getText())					
-				};
+			if (e.getSource() == txtName) {
+				if (!apiClosed)
+					getAPI().close();
 				
-				double total = 0;
-				for (int i = 0; i < rates.length; i++)
-					total += rates[i];
+				apiClosed = true;
+				updateAPIMap();
+			} else {
+				try {
+					double[] rates = { Double.parseDouble(txtIron.getText()), Double.parseDouble(txtGold.getText()),
+							Double.parseDouble(txtSilver.getText()), Double.parseDouble(txtZinc.getText()), Double.parseDouble(txtCopper.getText()),
+							Double.parseDouble(txtLead.getText()), Double.parseDouble(txtTin.getText()), Double.parseDouble(txtAddy.getText()),
+							Double.parseDouble(txtGlimmer.getText()), Double.parseDouble(txtMarble.getText()), Double.parseDouble(txtSlate.getText())					
+					};
+					
+					double total = 0;
+					for (int i = 0; i < rates.length; i++)
+						total += rates[i];
+					
+					txtRock.setText("" + (100.0 - total));
+				} catch (NumberFormatException nfe) {
 				
-				txtRock.setText("" + (100.0 - total));
-			} catch (NumberFormatException nfe) {
-			
+				}
 			}
 		}
 	}
