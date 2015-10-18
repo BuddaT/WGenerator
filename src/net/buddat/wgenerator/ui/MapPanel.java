@@ -91,7 +91,7 @@ public class MapPanel extends JPanel {
 		
 	}
 
-	private void updateScale() {
+	public void updateScale() {
 		if(this.getWidth() < this.getHeight())
 			this.minScale = (double)this.getWidth() / (double)mapImage.getWidth();
 		if(this.getHeight() < this.getWidth())
@@ -108,7 +108,7 @@ public class MapPanel extends JPanel {
 		return (int)Math.round(this.mapImage.getHeight() * this.scale);
 	}
 	
-	private void checkBounds() {
+	public void checkBounds() {
 		int wH = this.getHeight();
 		int wW = this.getWidth();
 		int iH = this.getImageHeight();

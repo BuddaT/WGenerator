@@ -535,6 +535,8 @@ public class WGenerator extends JFrame implements ActionListener, FocusListener 
 				pnlMap.setMapImage(getAPI().getMapData().createMapDump());
 		}
 		
+		pnlMap.updateScale();
+		pnlMap.checkBounds();
 		pnlMap.repaint();
 	}
 	
