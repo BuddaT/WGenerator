@@ -918,6 +918,8 @@ public class WGenerator extends JFrame implements ActionListener, FocusListener 
 				while ((line = br.readLine()) != null) {
 					parseAction(line);
 				}
+				
+				br.close();
 			} catch (IOException ex) {
 				logger.log(Level.SEVERE, null, ex);
 			}
