@@ -495,6 +495,7 @@ public class WGenerator extends JFrame implements ActionListener, FocusListener 
 		
 		if (api == null)
 			try {
+                                txtName.setText(txtSeed.getText());
 				api = WurmAPI.create("./maps/" + txtName.getText() + "/", (int) (Math.log(heightMap.getMapSize()) / Math.log(2)));
 				apiClosed = false;
 			} catch (IOException e) {
@@ -869,6 +870,7 @@ public class WGenerator extends JFrame implements ActionListener, FocusListener 
 			
 			MapData map = getAPI().getMapData();
 			try {
+                                txtName.setText(txtSeed.getText());
 				ImageIO.write(map.createMapDump(), "png", new File("./maps/" + txtName.getText() + "/map.png"));
 				ImageIO.write(map.createTopographicDump(true, (short) 250), "png", new File("./maps/" + txtName.getText() + "/topography.png"));
 				ImageIO.write(map.createCaveDump(true), "png", new File("./maps/" + txtName.getText() + "/cave.png"));
@@ -897,6 +899,7 @@ public class WGenerator extends JFrame implements ActionListener, FocusListener 
 			}
 			
 			try {
+                                txtName.setText(txtSeed.getText());
 				File actionsFile = new File("./maps/" + txtName.getText() + "/map_actions.txt");
 				actionsFile.createNewFile();
 				
