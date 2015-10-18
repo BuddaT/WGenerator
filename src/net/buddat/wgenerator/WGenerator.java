@@ -793,15 +793,7 @@ public class WGenerator extends JFrame implements ActionListener, FocusListener 
 						Double.parseDouble(txtGlimmer.getText()), Double.parseDouble(txtMarble.getText()), Double.parseDouble(txtSlate.getText())					
 				};
 				
-				double total = 0;
-				for (int i = 0; i < rates.length; i++)
-					total += rates[i];
-				
-				if (total != 100.0) {
-					JOptionPane.showMessageDialog(this, "Ore totals do not match 100%: " + total, "Error Generating Ores", JOptionPane.ERROR_MESSAGE);
-				} else {
-					tileMap.generateOres(rates);
-				}
+				tileMap.generateOres(rates);
 				
 				updateAPIMap();
 				
