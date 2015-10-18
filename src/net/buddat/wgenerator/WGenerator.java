@@ -604,29 +604,6 @@ public class WGenerator extends JFrame implements ActionListener, FocusListener 
 					
 				btnDropDirt.doClick();
 				break;
-			case "SEEDBIOME":
-				if (options.length < 10) {
-					JOptionPane.showMessageDialog(this, "Not enough options for SEEDBIOME", "Error Loading Actions", JOptionPane.ERROR_MESSAGE);
-					return;
-				}
-				
-				try {
-					cmbBiomeType.setSelectedIndex(Integer.parseInt(options[0]));
-					txtBiomeSeedCount.setText(options[1]);
-					txtBiomeSize.setText(options[2]);
-					txtBiomeMaxSlope.setText(options[3]);
-					txtBiomeRateN.setText(options[4]);
-					txtBiomeRateS.setText(options[5]);
-					txtBiomeRateE.setText(options[6]);
-					txtBiomeRateW.setText(options[7]);
-					txtBiomeMinHeight.setText(options[8]);
-					txtBiomeMaxHeight.setText(options[9]);
-					
-					btnSeedBiome.doClick();
-				} catch (Exception nfe) {
-					JOptionPane.showMessageDialog(this, "Error parsing number " + nfe.getMessage().toLowerCase(), "Error Loading Actions", JOptionPane.ERROR_MESSAGE);
-				}
-				break;
 			case "UNDOBIOME":
 				btnUndoBiome.doClick();
 				break;
@@ -655,7 +632,30 @@ public class WGenerator extends JFrame implements ActionListener, FocusListener 
 				btnGenOres.doClick();
 				break;
 			default:
-				break;
+				if(parts[0].startsWith("SEEDBIOME")){
+                                    if (options.length < 10) {
+                                            JOptionPane.showMessageDialog(this, "Not enough options for SEEDBIOME", "Error Loading Actions", JOptionPane.ERROR_MESSAGE);
+                                            return;
+                                    }
+
+                                    try {
+                                            cmbBiomeType.setSelectedIndex(Integer.parseInt(options[0]));
+                                            txtBiomeSeedCount.setText(options[1]);
+                                            txtBiomeSize.setText(options[2]);
+                                            txtBiomeMaxSlope.setText(options[3]);
+                                            txtBiomeRateN.setText(options[4]);
+                                            txtBiomeRateS.setText(options[5]);
+                                            txtBiomeRateE.setText(options[6]);
+                                            txtBiomeRateW.setText(options[7]);
+                                            txtBiomeMinHeight.setText(options[8]);
+                                            txtBiomeMaxHeight.setText(options[9]);
+
+                                            btnSeedBiome.doClick();
+                                    } catch (Exception nfe) {
+                                            JOptionPane.showMessageDialog(this, "Error parsing number " + nfe.getMessage().toLowerCase(), "Error Loading Actions", JOptionPane.ERROR_MESSAGE);
+                                    }
+                                }
+                        break;
 		}
 	}
 	
@@ -741,7 +741,7 @@ public class WGenerator extends JFrame implements ActionListener, FocusListener 
 				
 				updateMapView(true, 0);
 				
-				genHistory.add("SEEDBIOME:" + cmbBiomeType.getSelectedIndex() + "," + txtBiomeSeedCount.getText() + "," + txtBiomeSize.getText() + "," +
+				genHistory.add("SEEDBIOME("+cmbBiomeType.getSelectedItem()+"):" + cmbBiomeType.getSelectedIndex() + "," + txtBiomeSeedCount.getText() + "," + txtBiomeSize.getText() + "," +
 						txtBiomeMaxSlope.getText() + "," + txtBiomeRateN.getText() + "," + txtBiomeRateS.getText() + "," +
 						txtBiomeRateE.getText() + "," + txtBiomeRateW.getText() + "," + txtBiomeMinHeight.getText() + "," +
 						txtBiomeMaxHeight.getText());
