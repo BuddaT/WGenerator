@@ -53,7 +53,7 @@ public class TileMap {
 		double maxSlopeHeight = maxSlope * singleDirt;
 		double maxDiagSlopeHeight = maxDiagSlope * singleDirt;
 		double maxHeight = maxDirtHeight * singleDirt;
-		double taperHeight = maxHeight - ((dirtCount / 2) * singleDirt);
+		double taperHeight = maxHeight - ((dirtCount * 2) * singleDirt);
 		
 		long startTime = System.currentTimeMillis();
 		for (int i = 0; i < dirtCount; i++) {
