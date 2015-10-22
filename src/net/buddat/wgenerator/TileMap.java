@@ -328,13 +328,13 @@ public class TileMap {
 	public void setWaterHeight(int newHeight) {
 		this.waterHeight = newHeight * singleDirt;
 	}
-	
+
 	private Point findDropTile(int x, int y, double maxSlope, double maxDiagSlope) {
 		ArrayList<Point> slopes = new ArrayList<Point>();
 		double currentHeight = getTileHeight(x, y);
 		
-		for (int i = x + 1; i > x - 1; i--) {
-			for (int j = y + 1; j > y - 1; j--) {
+		for (int i = x + 1; i >= x - 1; i--) {
+			for (int j = y + 1; j >= y - 1; j--) {
 				if (i < 0 || j < 0 || i >= heightMap.getMapSize() || j >= heightMap.getMapSize())
 					continue;
 				

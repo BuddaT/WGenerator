@@ -486,7 +486,6 @@ public class WGenerator extends JFrame implements ActionListener, FocusListener 
 		this.add(pnlMap, BorderLayout.CENTER);
 		this.add(pnlSaveControls, BorderLayout.SOUTH);
 		
-		this.setResizable(false);
 		this.setBounds(0, 0, width + 400, height + 35);
 		this.setLocationRelativeTo(null);
 		this.setVisible(true);
