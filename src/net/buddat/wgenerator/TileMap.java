@@ -7,6 +7,8 @@ import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.swing.JProgressBar;
+
 import com.wurmonline.mesh.Tiles.Tile;
 
 public class TileMap {
@@ -49,7 +51,7 @@ public class TileMap {
 		this.lastBiomeChanges = new HashMap<Point, Tile>();
 	}
 	
-	public void dropDirt(int dirtCount, int maxSlope, int maxDiagSlope, int maxDirtHeight) {
+	public void dropDirt(int dirtCount, int maxSlope, int maxDiagSlope, int maxDirtHeight, JProgressBar progress) {
 		double maxSlopeHeight = maxSlope * singleDirt;
 		double maxDiagSlopeHeight = maxDiagSlope * singleDirt;
 		double maxHeight = maxDirtHeight * singleDirt;
@@ -57,6 +59,9 @@ public class TileMap {
 		
 		long startTime = System.currentTimeMillis();
 		for (int i = 0; i < dirtCount; i++) {
+
+            progress.setValue((int)((float)i/dirtCount*90f));
+            
 			for (int x = 0; x < heightMap.getMapSize(); x++) {
 				for (int y = 0; y < heightMap.getMapSize(); y++) {
 					if (heightMap.getHeight(x, y) > maxHeight)
@@ -76,10 +81,12 @@ public class TileMap {
 		logger.log(Level.INFO, "Dirt Dropping (" + dirtCount + ") completed in " + (System.currentTimeMillis() - startTime) + "ms.");
 	}
 	
-	public void generateOres(double[] rates) {
+	public void generateOres(double[] rates, JProgressBar progress) {
 		long startTime = System.currentTimeMillis();
 		
 		for (int x = 0; x < heightMap.getMapSize(); x++) {
+            progress.setValue((int)((float)x/heightMap.getMapSize()*90f));
+            
 			for (int y = 0; y < heightMap.getMapSize(); y++) {
 				double rand = biomeRandom.nextDouble() * 100;
 				double total;
@@ -123,7 +130,7 @@ public class TileMap {
 			setType(p, lastBiomeChanges.get(p));
 	}
 	
-	public void plantBiome(int seedCount, int growthIterations, double[] growthRate, int maxBiomeSlope, int minHeight, int maxHeight, Tile type) {
+	public void plantBiome(int seedCount, int growthIterations, double[] growthRate, int maxBiomeSlope, int minHeight, int maxHeight, Tile type, JProgressBar progress) {
 		long startTime = System.currentTimeMillis();
 		
 		ArrayList<Point> grassList = new ArrayList<Point>();
@@ -135,6 +142,7 @@ public class TileMap {
 			grassList.add(new Point(biomeRandom.nextInt(heightMap.getMapSize()), biomeRandom.nextInt(heightMap.getMapSize())));
 		
 		for (int i = 0; i < growthIterations; i++) {
+            progress.setValue((int)((float)i/growthIterations*90f));
 			nextList = growBiome(grassList, type, growthRate, maxBiomeSlope, minHeight, maxHeight);
 			grassList = growBiome(nextList, type, growthRate, maxBiomeSlope, minHeight, maxHeight);
 		}

@@ -3,6 +3,8 @@ package net.buddat.wgenerator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.swing.JProgressBar;
+
 import net.buddat.wgenerator.util.SimplexNoise;
 
 /**
@@ -59,14 +61,14 @@ public class HeightMap {
 	 *  Generates a full heightmap with the current instance's set values.
 	 *  Clamps the heightmap heights for the last iteration only.
 	 */
-	public void generateHeights() {
+	public void generateHeights(JProgressBar progress) {
 		logger.log(Level.INFO, "HeightMap seed set to: " + noiseSeed);
 		SimplexNoise.genGrad(noiseSeed);
 		
 		long startTime = System.currentTimeMillis();
 		for (int i = 0; i < iterations; i++) {
 			logger.log(Level.FINE, "HeightMap Generation (" + mapSize + ") - Iteration(" + (i + 1) + "/" + iterations + ")");
-			
+			progress.setValue((int)((float)i/iterations*90f));
 			double iRes = resolution / Math.pow(2, i - 1);
 			double str = Math.pow(2, i - 1) * 2.0;
 			
@@ -111,10 +113,13 @@ public class HeightMap {
 		logger.log(Level.INFO, "HeightMap Normalization (" + mapSize + ") completed in " + (System.currentTimeMillis() - startTime) + "ms.");
 	}
 	
-	public void erode(int iterations, int minSlope, int sedimentMax) {
+	public void erode(int iterations, int minSlope, int sedimentMax, JProgressBar progress) {
 		long startTime = System.currentTimeMillis();
 		
 		for (int iter = 0; iter < iterations; iter++) {
+
+            progress.setValue((int)((float)iter/iterations*90f));
+            
 			for (int i = 0; i < mapSize; i++) {
 				for (int j = 0; j < mapSize; j++) {
 					double neighbours[] = new double[4];
