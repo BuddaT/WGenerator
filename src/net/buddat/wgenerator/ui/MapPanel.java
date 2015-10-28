@@ -141,6 +141,8 @@ public class MapPanel extends JPanel {
 	public void setMapSize(int newMapSize) {
 		mapSize = newMapSize;
 		
+		if (mapImage != null)
+			mapImage.flush();
 		mapImage = new BufferedImage(mapSize, mapSize, BufferedImage.TYPE_BYTE_GRAY);
 		updateScale();
 		checkBounds();
@@ -148,6 +150,8 @@ public class MapPanel extends JPanel {
 	}
 	
 	public void setMapImage(BufferedImage newImage) {
+		if (mapImage != null)
+			mapImage.flush();
 		mapImage = newImage;
 		updateScale();
 		checkBounds();
