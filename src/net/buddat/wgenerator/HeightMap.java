@@ -61,7 +61,7 @@ public class HeightMap {
 	 *  Generates a full heightmap with the current instance's set values.
 	 *  Clamps the heightmap heights for the last iteration only.
 	 */
-	public void generateHeights(JProgressBar progress) {
+	void generateHeights(JProgressBar progress) {
 		logger.log(Level.INFO, "HeightMap seed set to: " + noiseSeed);
 		SimplexNoise.genGrad(noiseSeed);
 		
@@ -82,7 +82,7 @@ public class HeightMap {
 		normalizeHeights();
 	}
 	
-	public void normalizeHeights() {
+	private void normalizeHeights() {
 		long startTime = System.currentTimeMillis();
 		
 		double maxHeight = 0.0f;
@@ -113,7 +113,7 @@ public class HeightMap {
 		logger.log(Level.INFO, "HeightMap Normalization (" + mapSize + ") completed in " + (System.currentTimeMillis() - startTime) + "ms.");
 	}
 	
-	public void erode(int iterations, int minSlope, int sedimentMax, JProgressBar progress) {
+	void erode(int iterations, int minSlope, int sedimentMax, JProgressBar progress) {
 		long startTime = System.currentTimeMillis();
 		
 		for (int iter = 0; iter < iterations; iter++) {
@@ -158,12 +158,8 @@ public class HeightMap {
 		
 		logger.log(Level.INFO, "HeightMap Erosion (" + iterations + ") completed in " + (System.currentTimeMillis() - startTime) + "ms.");
 	}
-	
-	public double[][] getHeightArray() {
-		return heightArray;
-	}
-	
-	public double getHeight(int x, int y) {
+
+	double getHeight(int x, int y) {
 		return heightArray[x][y];
 	}
 	
@@ -174,7 +170,7 @@ public class HeightMap {
 	 * @param clamp Whether to clamp the location's height depending on x/y and the border cutoff (Constants.BORDER_WEIGHT)
 	 * @return The height that was set after constraints and clamping
 	 */
-	public double setHeight(int x, int y, double newHeight, boolean clamp) {
+	private double setHeight(int x, int y, double newHeight, boolean clamp) {
 		if (newHeight < (moreLand ? -1d : 0))
 			newHeight = (moreLand ? -1d : 0);
 		if (newHeight > 1d)
@@ -198,58 +194,22 @@ public class HeightMap {
 		
 		return heightArray[x][y];
 	}
+
 	
-	public long getSeed() {
-		return noiseSeed;
-	}
-	
-	public void setSeed(long newSeed) {
-		this.noiseSeed = newSeed;
-	}
-	
-	public int getMaxHeight() {
+	int getMaxHeight() {
 		return maxHeight;
 	}
+
 	
-	public void setMaxHeight(int newMaxHeight) {
-		this.maxHeight = newMaxHeight;
-	}
-	
-	public int getMapSize() {
+	int getMapSize() {
 		return mapSize;
 	}
 	
-	/**
-	 * @param newSize Size to set the map to
-	 * 
-	 * We don't want to set the map size after construction.
-	 * To generate a new map at a different size, create a new instance.
-	 */
-	protected void setMapSize(int newSize) {
-		this.mapSize = newSize;
-	}
-	
-	public double getResolution() {
-		return resolution;
-	}
-	
-	public void setResolution(double newResolution) {
-		this.resolution = newResolution;
-	}
-	
-	public int getIterations() {
-		return iterations;
-	}
-	
-	public void setIterations(int newIterations) {
-		this.iterations = newIterations;
-	}
-	
-	public double getSingleDirt() {
+	double getSingleDirt() {
 		return singleDirt;
 	}
 	
-	public static int clamp(int val, int min, int max) {
+	static int clamp(int val, int min, int max) {
 	    return Math.max(min, Math.min(max, val));
 	}
 }

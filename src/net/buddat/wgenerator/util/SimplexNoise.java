@@ -24,6 +24,7 @@ public class SimplexNoise {
  
         // To remove the need for index wrapping, double the permutation table length
         private static int perm[] = new int[512];
+        
         static {
                 for(int i = 0; i < 512; i++)
                         perm[i] = p[i & 255];

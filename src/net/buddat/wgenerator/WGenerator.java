@@ -19,7 +19,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Random;
-import java.util.concurrent.Executors;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -39,7 +38,6 @@ import javax.swing.JTextField;
 import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
 import javax.swing.filechooser.FileFilter;
-import javax.swing.filechooser.FileView;
 import javax.swing.plaf.basic.BasicProgressBarUI;
 
 import com.wurmonline.mesh.FoliageAge;
@@ -60,7 +58,7 @@ public class WGenerator extends JFrame implements ActionListener, FocusListener 
 
 	private WurmAPI api;
 
-	public HeightMap heightMap;
+	private HeightMap heightMap;
 
 	private TileMap tileMap;
 
@@ -502,7 +500,7 @@ public class WGenerator extends JFrame implements ActionListener, FocusListener 
 				this.setVisible(true);
 	}
 
-	public WurmAPI getAPI() {
+	private WurmAPI getAPI() {
 		if (apiClosed)
 			api = null;
 
@@ -525,7 +523,7 @@ public class WGenerator extends JFrame implements ActionListener, FocusListener 
 		updateMapView(false, 0);
 	}
 
-	public void updateMapView(boolean apiView, int viewType) {
+	private void updateMapView(boolean apiView, int viewType) {
 		if (!apiView) {
 			Graphics g = pnlMap.getMapImage().getGraphics();
 
@@ -694,6 +692,7 @@ public class WGenerator extends JFrame implements ActionListener, FocusListener 
 		}
 
 		if (e.getSource() == btnGenHeightMap) {
+//			txtSeed.setText("" + System.currentTimeMillis());
 			new Thread() {
 				@Override
 				public void run() {
@@ -999,6 +998,8 @@ public class WGenerator extends JFrame implements ActionListener, FocusListener 
 				ImageIO.write(map.createCaveDump(true), "png", new File("./maps/" + txtName.getText() + "/cave.png"));
 			} catch (IOException ex) {
 				logger.log(Level.SEVERE, null, ex);
+			} finally {
+				stopLoading();
 			}
 		}
 
@@ -1009,10 +1010,14 @@ public class WGenerator extends JFrame implements ActionListener, FocusListener 
 			}
 
 			updateAPIMap();
-
-			getAPI().getMapData().saveChanges();
-			getAPI().close();
-			apiClosed = true;
+			
+			try {
+				getAPI().getMapData().saveChanges();
+				getAPI().close();
+				apiClosed = true;
+			} finally {
+				stopLoading();
+			}
 		}
 
 		if (e.getSource() == btnSaveActions) {
@@ -1032,6 +1037,8 @@ public class WGenerator extends JFrame implements ActionListener, FocusListener 
 				bw.close();
 			} catch (IOException ex) {
 				logger.log(Level.SEVERE, null, ex);
+			} finally {
+				stopLoading();
 			}
 		}
 
@@ -1061,6 +1068,8 @@ public class WGenerator extends JFrame implements ActionListener, FocusListener 
 			} catch (IOException ex) {
 				JOptionPane.showMessageDialog(this, "Unable to load actions file", "Error Loading Map", JOptionPane.ERROR_MESSAGE);
 				logger.log(Level.WARNING, "Error loading actions file: " + ex.getMessage());
+			} finally {
+				stopLoading();
 			}
 		}
 
@@ -1111,7 +1120,7 @@ public class WGenerator extends JFrame implements ActionListener, FocusListener 
 		}
 	}
 
-	class TextFileView extends FileFilter {
+	private class TextFileView extends FileFilter {
 
 		public boolean accept(File f) {
 			if (f.isDirectory()) {
